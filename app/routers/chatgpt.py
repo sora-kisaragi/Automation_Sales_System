@@ -1,14 +1,20 @@
+from models.chatmessage import ChatMessage
+import json
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 from pydantic import BaseModel
-from openai import OpenAI, ChatCompletion
+from openai import OpenAI
 from dotenv import load_dotenv
+import tiktoken
 import os
 
-router = APIRouter()
+load_dotenv()  # .envファイルから環境変数を読み込む
+API_KEY = os.getenv("API_KEY")  # APIキーを環境変数から取得
 
-@router.post("/chat")
-async def chat_gpt(message: ChatMessage):
+router = APIRouter(prefix="/api/v1")
+
+@router.post("/chat", tags=["chatgpt"])
+async def convert_infomation(message: ChatMessage):
     """
     メッセージをChatGPTに送信し、返答を返します。
 
@@ -18,10 +24,7 @@ async def chat_gpt(message: ChatMessage):
     Returns:
         str: ChatGPTからの返答
     """
-    # ここでChatGPTにメッセージを送信し、返答を取得します。
-    # 注意: 実際のコードでは、OpenAIのAPIキーとその他の設定が必要です。
-    # 以下のコードは例示的なもので、実際には動作しません。
-    openai = OpenAI("your-api-key")
+
     default_message = """
     #命令書
     あなたはSESの営業担当者を補佐する事務員のスペシャリストです。
@@ -38,7 +41,7 @@ async def chat_gpt(message: ChatMessage):
     * 必ずすべてのkeyを含む状態で生成してください
     * step by step で考えてください
     * メール形式でデータを入力するので不要なものは省いてください
-    * 1つのメール本文に複数案件がある場合は一回の出力にまとめてください
+    * 1つのメール本文に複数案件がある場合は配列で出力してください
     * 間違いないか確認してください
 
 
@@ -63,14 +66,26 @@ async def chat_gpt(message: ChatMessage):
                 ],
                 "面談": "string",
                 "要約": "string"
-            }
+            }...
         ]
     }
     """
-    chat = ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": "system", "content": default_message}, {"role": "user", "content": message.message}])
-    return chat['choices'][0]['message']['content']
+    client = OpenAI(api_key=API_KEY)
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {"role": "system", "content": default_message},
+            {"role": "user", "content": message.message}
+        ],
+        model="gpt-3.5-turbo",
+    )
+    try:
+        # 応答をJSONとして解析
+        response = json.loads(chat_completion.choices[0].message.content)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="処理に失敗しました")
+    return response
 
-@router.post("/count_tokens")
+@router.post("/count_tokens", tags=["chatgpt"])
 async def count_tokens(message: ChatMessage):
     """
     メッセージのトークン数を計算します。
@@ -81,9 +96,8 @@ async def count_tokens(message: ChatMessage):
     Returns:
         int: トークン数
     """
-    # ここでメッセージのトークン数を計算します。
-    # 注意: 実際のコードでは、OpenAIのAPIキーとその他の設定が必要です。
-    # 以下のコードは例示的なもので、実際には動作しません。
-    openai = OpenAI("your-api-key")
-    tokens = openai.count_tokens(message.message)
+    enc = tiktoken.get_encoding("cl100k_base")
+    e = enc.encode(message.message)
+
+    tokens = len(e)
     return tokens
