@@ -1,5 +1,5 @@
 from models.project import Project
-from database import create_session
+from database import Database
 
 class ProjectService:
     """
@@ -9,7 +9,8 @@ class ProjectService:
     """
 
     def __init__(self):
-        self.session = create_session()
+        self.database = Database()
+        self.session = self.database.create_session()
 
     def create_project(self, project):
         """
@@ -34,7 +35,7 @@ class ProjectService:
         Returns:
             Project: 取得したプロジェクトのオブジェクト
         """
-        project = self.session.query(Project).get(id)
+        project = self.session.get(Project, id)
         return project
     
     def get_all_projects(self):
@@ -58,10 +59,15 @@ class ProjectService:
         Returns:
             None
         """
-        project = self.session.query(Project).get(id)
-        for key, value in updated_project.items():
-            setattr(project, key, value)
-        self.session.commit()
+        project = self.session.get(Project, id)
+        if project:
+            for key, value in updated_project.items():
+                setattr(project, key, value)
+            self.session.commit()
+        else:
+            # プロジェクトが存在しない場合の処理
+            # 例えばエラーをログに記録するなど
+            pass
 
     def delete_project(self, id):
         """
@@ -73,6 +79,6 @@ class ProjectService:
         Returns:
             None
         """
-        project = self.session.query(Project).get(id)
+        project = self.session.get(Project, id)
         self.session.delete(project)
         self.session.commit()

@@ -1,2 +1,8 @@
 API_KEY=your-api-key
 MODE=debug
+
+DB_NAME=database_name
+DB_HOST="127.0.0.1"
+DB_USER=USERNAME
+DB_PASSWORD=PASSWORD
+DB_PORT=3306

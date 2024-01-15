@@ -1,13 +1,12 @@
 # project.py
-from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy import Column, Integer, String, DateTime, Text, func
 from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from .base import Base
 
 class Project(Base):
     __tablename__ = 'projects'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     company_name = Column(String(255))
     person_in_charge = Column(String(255))
     project_name = Column(String(255))
@@ -19,6 +18,6 @@ class Project(Base):
     settlement = Column(String(255))
     interview = Column(String(255))
     summary = Column(Text)
-    created_at = Column(DateTime, nullable=False)
-    updated_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
     deleted_at = Column(DateTime)
