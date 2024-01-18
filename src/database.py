@@ -33,7 +33,7 @@ class Database:
         """
         connection_string = f'mysql+pymysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}'
         self.engine = create_engine(connection_string)
-    
+
     def get_engine(self):
         """
         データベースエンジンのインスタンスを取得します。
@@ -42,7 +42,7 @@ class Database:
         if not self.engine:
             self.create_engine()
         return self.engine
-    
+
     def create_session(self):
         """
         新しいセッションを作成し、それを返します。
@@ -111,20 +111,29 @@ class Database:
         self.create_tables(base)
         if initial_data_function:
             initial_data_function(self.session)
-            
+
     def test_connection(self):
         """
         データベースへの接続をテストします。
         接続が成功すれば True を、失敗すれば False を返します。
         """
         try:
+            print("データベースへの接続をテストします...")
             # エンジンが定義されていない場合は、エンジンを作成します。
             if not self.engine:
                 self.create_engine()
             # text() 関数を使用してSQLステートメントを実行します。
             with self.engine.connect() as connection:
                 result = connection.execute(text("SELECT 1"))
+                print("データベースへの接続に成功しました。")
                 return True
         except Exception as e:
             print(f"接続テスト中にエラーが発生しました: {e}")
             return False
+
+if __name__ == '__main__':
+    # データベース接続をテストします。
+    database = Database()
+    database.create_engine()
+    database.test_connection()
+    database.close_session()
