@@ -1,24 +1,39 @@
 version: "3"
 services:
-  db:
+  mysql:
     image: mysql:8.0.34
-    container_name: db-container
-    hostname: db-server
+    container_name: mysql-container
+    hostname: ${DB_HOST}
     volumes:
       - mysql-data-volume:/var/lib/mysql
       - ./logs:/var/log/mysql
-      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./mysql/my.cnf:/etc/my.cnf
       - ./sql:/docker-entrypoint-initdb.d
     environment:
       - MYSQL_DATABASE=${DB_NAME}
       - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASS}
-      - MYSQL_ROOT_PASSWORD=${DB_PASS}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
       - TZ=${TZ}
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
     ports:
       - ${DB_PORT}:3306
     restart: always
+    networks:
+      - container-link
+
+  phpmyadmin:
+    image: phpmyadmin
+    depends_on:
+      - mysql
+    container_name: phpmyadmin-container
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOSTS=mysql
+      - PMA_USER=${DB_USER}
+      - PMA_PASSWORD=${DB_PASSWORD}
+    ports:
+      - ${PHP_MY_ADMIN_PORT}:80
     networks:
       - container-link
 
@@ -28,9 +43,9 @@ networks:
     name: bridge
 
   container-link:
-    name: docker.internal
+    name: automation.internal
 
 volumes:
   mysql-data-volume:
-    name: mysql-data
+    name: automation-system-mysql-data-volume
     driver: local
